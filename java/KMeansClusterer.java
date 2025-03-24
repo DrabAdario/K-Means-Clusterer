@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * KMeansClusterer.java - a JUnit-testable interface for the Model AI
@@ -172,7 +175,17 @@ public class KMeansClusterer {
 	 * @return the minimum Within-Clusters Sum-of-Squares measure
 	 */
 	public double getWCSS() {
-		// TODO - implement
+		// creates the minimum Within-Clusters Sum-of-Squares
+		double wcss = 0.0;
+		// loops throught the data
+		for (int i = 0; i < data.length; i++) {
+			int cluster = clusters[i];
+			// gets the distance of current cluster in the loop
+			double distance = getDistance(data[i], centroids[cluster]);
+			// ads the
+			wcss += distance * distance;
+		}
+		return wcss;
 	}
 
 	/**
@@ -182,14 +195,58 @@ public class KMeansClusterer {
 	 * @return whether or not any cluster assignments changed
 	 */
 	public boolean assignNewClusters() {
-		// TODO - implement
+		boolean changed = false;
+		for (int i = 0; i < data.length; i++) {
+			double[] point = data[i];
+			int bestCluster = -1;
+			double minDistance = Double.MAX_VALUE;
+
+			for (int j = 0; j < k; j++) {
+				double distance = getDistance(point, centroids[j]);
+				if (distance < minDistance) {
+					minDistance = distance;
+					bestCluster = j;
+				}
+			}
+
+			if (clusters[i] != bestCluster) {
+				clusters[i] = bestCluster;
+				changed = true;
+			}
+		}
+		return changed;
 	}
 
 	/**
 	 * Compute new centroids at the mean point of each cluster of points.
 	 */
 	public void computeNewCentroids() {
-		// TODO - implement
+		double[][] newCentroids = new double[k][dim];
+		for (int i = 0; i < k; i++) {
+			Arrays.fill(newCentroids[i], 0.0);
+		}
+		int[] counts = new int[k];
+		Arrays.fill(counts, 0);
+
+		for (int j = 0; j < data.length; j++) {
+			int cluster = clusters[j];
+			counts[cluster]++;
+			for (int d = 0; d < dim; d++) {
+				newCentroids[cluster][d] += data[j][d];
+			}
+		}
+
+		for (int i = 0; i < k; i++) {
+			if (counts[i] > 0) {
+				for (int d = 0; d < dim; d++) {
+					newCentroids[i][d] /= counts[i];
+				}
+			} else {
+				System.arraycopy(centroids[i], 0, newCentroids[i], 0, dim);
+			}
+		}
+
+		centroids = newCentroids;
 	}
 
 	/**
@@ -200,7 +257,45 @@ public class KMeansClusterer {
 	 * uniform samples uniformly across given data ranges.
 	 */
 	public void kMeansCluster() {
-		// TODO - implement
+		
+		int[] bestClusters = null;
+		double[][] bestCentroids = null;
+		double bestWCSS = Double.MAX_VALUE;
+
+		for (int run = 0; run < iter; run++) {
+			ArrayList<Integer> indices = new ArrayList<>();
+			for (int i = 0; i < data.length; i++) {
+				indices.add(i);
+			}
+			Collections.shuffle(indices, random);
+			centroids = new double[k][dim];
+			for (int i = 0; i < k; i++) {
+				int dataIndex = indices.get(i % indices.size());
+				System.arraycopy(data[dataIndex], 0, centroids[i], 0, dim);
+			}
+
+			clusters = new int[data.length];
+			assignNewClusters();
+
+			boolean changed;
+			do {
+				computeNewCentroids();
+				changed = assignNewClusters();
+			} while (changed);
+
+			double currentWCSS = getWCSS();
+			if (currentWCSS < bestWCSS) {
+				bestWCSS = currentWCSS;
+				bestClusters = clusters.clone();
+				bestCentroids = new double[k][dim];
+				for (int i = 0; i < k; i++) {
+					System.arraycopy(centroids[i], 0, bestCentroids[i], 0, dim);
+				}
+			}
+		}
+
+		clusters = bestClusters;
+		centroids = bestCentroids;
 	}
 
 	/**

@@ -15,7 +15,7 @@ import java.util.Collections;
  * 
  * @author Todd W. Neller
  */
-public class KMeansClusterer {
+public class KMeansClustererQ2 {
 	private int dim; // the number of dimensions in the data
 	private int k, kMin, kMax; // the allowable range of the of clusters
 	private int iter; // the number of k-Means Clustering iterations per k

@@ -176,9 +176,13 @@ public class KMeansClusterer {
 	 */
 	public double getWCSS() {
 		double wcss = 0.0;
+		int[] clusters = getClusters();
+		// loops throughout the data
 		for (int i = 0; i < data.length; i++) {
 			int cluster = clusters[i];
+			// gets the distance between a point of data and centeroid
 			double distance = getDistance(data[i], centroids[cluster]);
+			// add distance * distance to WCSS
 			wcss += distance * distance;
 		}
 		return wcss;
@@ -191,6 +195,7 @@ public class KMeansClusterer {
 	 * @return whether or not any cluster assignments changed
 	 */
 	public boolean assignNewClusters() {
+
 		boolean changed = false;
 		for (int i = 0; i < data.length; i++) {
 			double[] point = data[i];
@@ -257,6 +262,7 @@ public class KMeansClusterer {
 		double[][] bestCentroids = null;
 		double bestWCSS = Double.MAX_VALUE;
 
+		// Perform iter independent runs
 		for (int run = 0; run < iter; run++) {
 			// Forgy initialization
 			ArrayList<Integer> indices = new ArrayList<>();
@@ -290,6 +296,7 @@ public class KMeansClusterer {
 				}
 			} while (changed);
 
+			// Compute WCSS for this run
 			double currentWCSS = getWCSS();
 			if (currentWCSS < bestWCSS) {
 				bestWCSS = currentWCSS;
@@ -301,8 +308,14 @@ public class KMeansClusterer {
 			}
 		}
 
+		// Set the final clustering
 		clusters = bestClusters;
 		centroids = bestCentroids;
+
+		// Safety check
+		if (clusters == null || centroids == null) {
+			throw new IllegalStateException("kMeansCluster failed to produce a valid clustering.");
+		}
 	}
 
 	/**

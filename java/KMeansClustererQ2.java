@@ -146,7 +146,9 @@ public class KMeansClustererQ2 {
 		// Return whether any assignments changed (used to determine convergence)
 		return changed;
 	}
-
+/**
+	 * Compute new centroids at the mean point of each cluster of points.
+	 */
 	public void computeNewCentroids() {
 		// Initialize a new array to store the updated centroids
 		double[][] newCentroids = new double[k][dim];
@@ -187,7 +189,13 @@ public class KMeansClustererQ2 {
 		// Update the centroids with the new values
 		centroids = newCentroids;
 	}
-
+/**
+	 * Perform k-means clustering with Forgy initialization and return the 0-based
+	 * cluster assignments for corresponding data points.
+	 * If iter > 1, choose the clustering that minimizes the WCSS measure.
+	 * If kMin < kMax, select the k maximizing the gap statistic using 100
+	 * uniform samples uniformly across given data ranges.
+	 */
 	public void kMeansCluster() {
 		// Check if k exceeds the number of data points, which would be invalid
 		if (k > data.length) {
@@ -261,6 +269,11 @@ public class KMeansClustererQ2 {
 		}
 	}
 
+	/**
+	 * Export cluster data in the given data output format to the file provided.
+	 * 
+	 * @param filename the destination file
+	 */
 	public void writeClusterData(String filename) {
 		try {
 			FileWriter out = new FileWriter(filename);
@@ -288,6 +301,19 @@ public class KMeansClustererQ2 {
 		}
 	}
 
+	/**
+	 * Read UNIX-style command line parameters to as to specify the type of k-Means
+	 * Clustering algorithm applied to the formatted data specified.
+	 * "-k int" specifies both the minimum and maximum number of clusters. "-kmin
+	 * int" specifies the minimum number of clusters. "-kmax int" specifies the
+	 * maximum number of clusters.
+	 * "-iter int" specifies the number of times k-Means Clustering is performed in
+	 * iteration to find a lower local minimum.
+	 * "-in filename" specifies the source file for input data. "-out filename"
+	 * specifies the destination file for cluster data.
+	 * 
+	 * @param args command-line parameters specifying the type of k-Means Clustering
+	 */
 	public static void main(String[] args) {
 		int kMin = 2, kMax = 2, iter = 1;
 		ArrayList<String> attributes = new ArrayList<String>();

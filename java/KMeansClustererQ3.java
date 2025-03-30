@@ -209,6 +209,7 @@ public class KMeansClustererQ3 {
 				clusters[i] = bestCluster;
 				changed = true;
 			}
+			
 		}
 		return changed;
 	}

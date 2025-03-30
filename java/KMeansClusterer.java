@@ -448,7 +448,7 @@ public class KMeansClusterer {
 
 		KMeansClusterer km = new KMeansClusterer();
 		km.setKRange(kMin, kMax);
-		km.setIter(iter);
+		km.setIter(1);
 		km.setData(km.readData(infile));
 		km.kMeansCluster();
 		km.writeClusterData(outfile);

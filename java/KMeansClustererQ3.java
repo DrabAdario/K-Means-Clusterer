@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 /**
  * KMeansClusterer.java - a JUnit-testable interface for the Model AI
@@ -96,7 +94,7 @@ public class KMeansClustererQ3 {
 
 	/**
 	 * Set the minimum and maximum allowable number of clusters k. If a single given
-	 * k is to be used, then kMin == kMax. If kMin &lt; kMax, then all k from kMin
+	 * k is to be used, then kMin == kMax. If kMin < kMax, then all k from kMin
 	 * to kMax inclusive will be
 	 * compared using the gap statistic. The minimum WCSS run of the k with the
 	 * maximum gap will be the result.
@@ -209,7 +207,6 @@ public class KMeansClustererQ3 {
 				clusters[i] = bestCluster;
 				changed = true;
 			}
-			
 		}
 		return changed;
 	}
@@ -249,8 +246,8 @@ public class KMeansClustererQ3 {
 	/**
 	 * Perform k-means clustering with Forgy initialization and return the 0-based
 	 * cluster assignments for corresponding data points.
-	 * If iter &gt; 1, choose the clustering that minimizes the WCSS measure.
-	 * If kMin &lt; kMax, select the k maximizing the gap statistic using 100
+	 * If iter > 1, choose the clustering that minimizes the WCSS measure.
+	 * If kMin < kMax, select the k maximizing the gap statistic using 100
 	 * uniform samples uniformly across given data ranges.
 	 */
 	public void kMeansCluster() {
@@ -405,11 +402,81 @@ public class KMeansClustererQ3 {
 				iter = values.get(i);
 		}
 
-		KMeansClusterer km = new KMeansClusterer();
-		km.setKRange(kMin, kMax);
-		km.setIter(iter);
+		KMeansClustererQ3 km = new KMeansClustererQ3();
 		km.setData(km.readData(infile));
-		km.kMeansCluster();
+		km.setIter(iter);
+
+		// Variables to track the best clustering based on gap statistic
+		double maxGap = Double.NEGATIVE_INFINITY;
+		int bestK = kMin;
+		double[][] bestCentroids = null;
+		int[] bestClusters = null;
+
+		// Compute min/max bounds for each dimension for random data generation
+		double[] mins = new double[km.getDim()];
+		double[] maxs = new double[km.getDim()];
+		for (int d = 0; d < km.getDim(); d++) {
+			mins[d] = Double.MAX_VALUE;
+			maxs[d] = Double.MIN_VALUE;
+			for (int j = 0; j < km.getData().length; j++) {
+				mins[d] = Math.min(mins[d], km.getData()[j][d]);
+				maxs[d] = Math.max(maxs[d], km.getData()[j][d]);
+			}
+		}
+
+		Random random = new Random();
+		// Iterate over each k from kMin to kMax
+		for (int candidateK = kMin; candidateK <= kMax; candidateK++) {
+			km.setKRange(candidateK, candidateK); // Set k for this iteration
+			km.kMeansCluster(); // Run iterated k-means
+			double logMinWCSS = Math.log(km.getWCSS());
+
+			// Generate 100 random datasets and compute average log WCSS
+			double sumLogWCSSRandom = 0.0;
+			int numRandomSets = 100;
+			for (int r = 0; r < numRandomSets; r++) {
+				// Generate a random dataset with same number of points and dimensions
+				double[][] randomData = new double[km.getData().length][km.getDim()];
+				for (int p = 0; p < randomData.length; p++) {
+					for (int d = 0; d < km.getDim(); d++) {
+						randomData[p][d] = mins[d] + (maxs[d] - mins[d]) * random.nextDouble();
+					}
+				}
+				km.setData(randomData);
+				km.setKRange(candidateK, candidateK);
+				km.setIter(1); // Single iteration for random data
+				km.kMeansCluster();
+				sumLogWCSSRandom += Math.log(km.getWCSS());
+			}
+			double avgLogWCSSRandom = sumLogWCSSRandom / numRandomSets;
+
+			// Compute gap statistic
+			double gap = avgLogWCSSRandom - logMinWCSS;
+
+			// Update best clustering if this gap is larger
+			if (gap > maxGap) {
+				maxGap = gap;
+				bestK = candidateK;
+				// Restore original data and rerun k-means to get centroids/clusters
+				km.setData(km.readData(infile));
+				km.setKRange(bestK, bestK);
+				km.setIter(iter);
+				km.kMeansCluster();
+				bestCentroids = new double[candidateK][km.getDim()];
+				for (int c = 0; c < candidateK; c++) {
+					System.arraycopy(km.getCentroids()[c], 0, bestCentroids[c], 0, km.getDim());
+				}
+				bestClusters = Arrays.copyOf(km.getClusters(), km.getClusters().length);
+			}
+		}
+
+		// Finalize the clustering with the best k
+		km.setData(km.readData(infile)); // Ensure original data is set
+		km.setKRange(bestK, bestK);
+		km.k = bestK; // Set the final k
+		km.setIter(iter);
+		km.centroids = bestCentroids;
+		km.clusters = bestClusters;
 		km.writeClusterData(outfile);
 	}
 }
